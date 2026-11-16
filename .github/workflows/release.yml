@@ -1,0 +1,105 @@
+name: Release Builds
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies & PyInstaller
+        run: |
+          uv sync
+          uv pip install pyinstaller
+
+      - name: Build Windows binary
+        run: |
+          uv run pyinstaller --noconfirm --windowed --name GenesisHeadTracker `
+            --icon assets/icon.ico `
+            --add-data "assets;assets" `
+            --collect-all mediapipe `
+            --collect-all customtkinter `
+            --collect-all cv2_enumerate_cameras `
+            headtrack.py
+
+      - name: Copy assets into dist folder
+        run: |
+          Copy-Item -Recurse -Force assets dist\GenesisHeadTracker\assets
+
+      - name: Install Inno Setup & build installer EXE
+        run: |
+          choco install innosetup -y
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: dist/Genesis-Head-Tracker-Setup.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Tkinter & system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk libgl1 libglib2.0-0
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies & PyInstaller
+        run: |
+          uv sync
+          uv pip install pyinstaller
+
+      - name: Build Linux bundle
+        run: |
+          uv run pyinstaller --noconfirm --windowed --name GenesisHeadTracker \
+            --add-data "assets:assets" \
+            --collect-all mediapipe \
+            --collect-all customtkinter \
+            --collect-all cv2_enumerate_cameras \
+            headtrack.py
+          cp -r assets dist/GenesisHeadTracker/assets
+          mkdir -p release_linux
+          cp -r dist/GenesisHeadTracker release_linux/
+          cp linux/install.sh release_linux/install.sh
+          chmod +x release_linux/install.sh
+          tar -czf Genesis-Head-Tracker-Linux-x86_64.tar.gz -C release_linux .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-release
+          path: Genesis-Head-Tracker-Linux-x86_64.tar.gz
+
+  publish-release:
+    needs: [build-windows, build-linux]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/windows-installer/Genesis-Head-Tracker-Setup.exe
+            artifacts/linux-release/Genesis-Head-Tracker-Linux-x86_64.tar.gz

@@ -23,16 +23,38 @@ from mediapipe.tasks.python import vision as mp_vision
 from PIL import Image, ImageTk
 from pynput import keyboard
 
-APP_DIR = Path(__file__).resolve().parent
+IS_FROZEN = getattr(sys, "frozen", False)
+APP_DIR = (Path.home() / ".genesis-head-tracker") if IS_FROZEN else Path(__file__).resolve().parent
+APP_DIR.mkdir(parents=True, exist_ok=True)
+RESOURCE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 MODEL_PATH = APP_DIR / "face_landmarker.task"
 MODEL_URL = (
     "https://storage.googleapis.com/mediapipe-models/face_landmarker/"
     "face_landmarker/float16/1/face_landmarker.task"
 )
 CONFIG_PATH = APP_DIR / "config.json"
-ICON_ICO = APP_DIR / "assets" / "icon.ico"
-ICON_PNG = APP_DIR / "assets" / "icon.png"
+ICON_ICO = RESOURCE_DIR / "assets" / "icon.ico"
+ICON_PNG = RESOURCE_DIR / "assets" / "icon.png"
 IS_WINDOWS = sys.platform == "win32"
+
+DEFAULT_CONFIG = {
+    "camera_source": "",
+    "rotate": 0,
+    "udp_ip": "127.0.0.1",
+    "udp_port": 4248,
+    "udp_hz": 200,
+    "recenter_key": "f7",
+    "pause_key": "scroll_lock",
+    "filter": {"min_cutoff": 0.75, "beta": 0.025, "d_cutoff": 1.0, "output_lerp": 0.18},
+    "axes": {
+        "yaw":   {"scale": 1.8, "deadzone": 1.4, "curve": 1.30, "max": 95.0, "invert": False},
+        "pitch": {"scale": 1.4, "deadzone": 1.2, "curve": 1.25, "max": 55.0, "invert": True},
+        "roll":  {"scale": 0.5, "deadzone": 2.0, "curve": 1.20, "max": 25.0, "invert": False},
+        "x":     {"scale": 0.7, "deadzone": 0.8, "curve": 1.15, "max": 20.0, "invert": False},
+        "y":     {"scale": 0.7, "deadzone": 0.8, "curve": 1.15, "max": 15.0, "invert": False},
+        "z":     {"scale": 0.8, "deadzone": 1.0, "curve": 1.15, "max": 20.0, "invert": False},
+    },
+}
 
 if IS_WINDOWS:
     import ctypes
@@ -619,6 +641,8 @@ class GenesisHeadTrackerApp(ctk.CTk):
 
 
 def main() -> None:
+    if not CONFIG_PATH.exists():
+        CONFIG_PATH.write_text(json.dumps(DEFAULT_CONFIG, indent=2) + "\n", encoding="utf-8")
     cfg = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     app = GenesisHeadTrackerApp(cfg)
     app.mainloop()
