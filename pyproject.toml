@@ -2,7 +2,7 @@
 name = "genesis-head-tracker"
 version = "1.0.0"
 description = "Cross-platform 6-DOF MediaPipe head tracker for ETS2/ATS and OpenTrack UDP (Windows & Linux)"
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "customtkinter>=6.0.0",
     "cv2-enumerate-cameras>=1.4.0",
