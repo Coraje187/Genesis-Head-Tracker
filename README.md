@@ -11,6 +11,8 @@ Designed for **any sim or game** supporting OpenTrack UDP or TrackIR/FreeTrack (
   3. Set **Output** to **`freetrack 2.0 Enhanced`**.
   4. Set **Filter** to **`None`** (so Genesis Head Tracker's 200 Hz One-Euro smoothing handles everything) and click **Start**.
 
+> **Disclaimer:** Genesis Head Tracker is an independent open-source project and is **not affiliated with, endorsed by, or supported by Project Ultimate or Angus May**. If you have any issues, bugs, or questions about Genesis Head Tracker, please open an issue on this GitHub repository rather than contacting Project Ultimate.
+
 ## Features
 - **Cross-platform:** Works natively on **Windows** (Media Foundation / DirectShow + optional USB Android camera via `scrcpy`) and **Linux** (V4L2 webcams).
 - **200 Hz Smooth Output:** Decoupled 200 Hz UDP interpolation thread + adaptive **One-Euro filter** for zero-jitter gauges and instant mirror checks.
