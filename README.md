@@ -4,8 +4,12 @@ A lightweight, cross-platform (**Windows & Linux**) 6-DOF head tracker powered b
 
 Designed for **any sim or game** supporting OpenTrack UDP or TrackIR/FreeTrack (**Microsoft Flight Simulator, DCS World, iRacing, Assetto Corsa, BeamNG.drive, Star Citizen, Elite Dangerous, Euro Truck Simulator 2, American Truck Simulator**, etc.).
 
-- **Direct UDP games / plugins** (like **Project Ultimate App** for ETS2/ATS by Angus May — [Project Ultimate on Patreon](https://www.patreon.com/c/AngusMay/posts)): point directly to `127.0.0.1:4248` with no extra software needed.
-- **Any TrackIR / FreeTrack game**: set OpenTrack's **Input** to `UDP over network` (port `4248`) and **Output** to `freetrack 2.0 Enhanced`.
+- **Direct UDP games / plugins** (like **Project Ultimate App** for ETS2/ATS by Angus May — [Project Ultimate on Patreon](https://www.patreon.com/c/AngusMay/posts)): works straight out of the box on `127.0.0.1:4248` with no extra software needed.
+- **Any TrackIR / FreeTrack game** (MSFS, DCS World, iRacing, Assetto Corsa, BeamNG.drive, Star Citizen, Elite Dangerous, Farming Simulator, Arma, etc.):
+  1. Open **OpenTrack**.
+  2. Set **Input** to **`UDP over network`** (port `4248`).
+  3. Set **Output** to **`freetrack 2.0 Enhanced`**.
+  4. Set **Filter** to **`None`** (so Genesis Head Tracker's 200 Hz One-Euro smoothing handles everything) and click **Start**.
 
 ## Features
 - **Cross-platform:** Works natively on **Windows** (Media Foundation / DirectShow + optional USB Android camera via `scrcpy`) and **Linux** (V4L2 webcams).
