@@ -1,0 +1,59 @@
+{
+  "camera_source": "DV20 USB CAMERA (DSHOW)",
+  "rotate": 0,
+  "udp_ip": "127.0.0.1",
+  "udp_port": 4248,
+  "udp_hz": 200,
+  "recenter_key": "f7",
+  "pause_key": "scroll_lock",
+  "filter": {
+    "min_cutoff": 0.75,
+    "beta": 0.025,
+    "d_cutoff": 1.0,
+    "output_lerp": 0.18
+  },
+  "axes": {
+    "yaw": {
+      "scale": 1.8,
+      "deadzone": 1.4,
+      "curve": 1.3,
+      "max": 95.0,
+      "invert": false
+    },
+    "pitch": {
+      "scale": 1.4,
+      "deadzone": 1.2,
+      "curve": 1.25,
+      "max": 55.0,
+      "invert": true
+    },
+    "roll": {
+      "scale": 0.5,
+      "deadzone": 2.0,
+      "curve": 1.2,
+      "max": 25.0,
+      "invert": false
+    },
+    "x": {
+      "scale": 0.7,
+      "deadzone": 0.8,
+      "curve": 1.15,
+      "max": 20.0,
+      "invert": false
+    },
+    "y": {
+      "scale": 0.7,
+      "deadzone": 0.8,
+      "curve": 1.15,
+      "max": 15.0,
+      "invert": false
+    },
+    "z": {
+      "scale": 0.8,
+      "deadzone": 1.0,
+      "curve": 1.15,
+      "max": 20.0,
+      "invert": false
+    }
+  }
+}

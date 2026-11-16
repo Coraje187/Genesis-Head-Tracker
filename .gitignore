@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+*.log
+smoke_*.txt
+gui_err.txt
+face_landmarker.task
