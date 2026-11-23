@@ -45,12 +45,13 @@ DEFAULT_CONFIG = {
     "udp_hz": 200,
     "recenter_key": "f7",
     "pause_key": "scroll_lock",
+    "window_lean": {"enabled": True, "start_yaw": 65.0, "full_yaw": 125.0, "max_x": 18.0, "invert": False},
     "filter": {"min_cutoff": 0.75, "beta": 0.025, "d_cutoff": 1.0, "output_lerp": 0.18},
     "axes": {
-        "yaw":   {"scale": 1.8, "deadzone": 1.4, "curve": 1.30, "max": 95.0, "invert": False},
+        "yaw":   {"scale": 1.9, "deadzone": 1.4, "curve": 1.32, "max": 155.0, "invert": False},
         "pitch": {"scale": 1.4, "deadzone": 1.2, "curve": 1.25, "max": 55.0, "invert": True},
         "roll":  {"scale": 0.5, "deadzone": 2.0, "curve": 1.20, "max": 25.0, "invert": False},
-        "x":     {"scale": 0.7, "deadzone": 0.8, "curve": 1.15, "max": 20.0, "invert": False},
+        "x":     {"scale": 1.2, "deadzone": 0.8, "curve": 1.15, "max": 35.0, "invert": False},
         "y":     {"scale": 0.7, "deadzone": 0.8, "curve": 1.15, "max": 15.0, "invert": False},
         "z":     {"scale": 0.8, "deadzone": 1.0, "curve": 1.15, "max": 20.0, "invert": False},
     },
@@ -247,6 +248,27 @@ def shape_axis(value: float, cfg: dict) -> float:
     return max(-limit, min(limit, shaped))
 
 
+def apply_window_lean(out: list[float], lean_cfg: dict, x_cfg: dict) -> list[float]:
+    """Smoothly blend lateral X shift when yaw turns past start_yaw (truck window look-out)."""
+    if not lean_cfg.get("enabled", True):
+        return out
+    yaw = out[3]
+    start_yaw = float(lean_cfg.get("start_yaw", 65.0))
+    full_yaw = max(start_yaw + 1.0, float(lean_cfg.get("full_yaw", 125.0)))
+    max_x = float(lean_cfg.get("max_x", 18.0))
+    abs_yaw = abs(yaw)
+    if abs_yaw <= start_yaw or max_x <= 0.0:
+        return out
+    t = min(1.0, (abs_yaw - start_yaw) / (full_yaw - start_yaw))
+    smooth_t = t * t * (3.0 - 2.0 * t)
+    direction = 1.0 if yaw > 0 else -1.0
+    if lean_cfg.get("invert", False):
+        direction = -direction
+    x_limit = max(float(x_cfg.get("max", 35.0)), max_x)
+    out[0] = max(-x_limit, min(x_limit, out[0] + direction * smooth_t * max_x))
+    return out
+
+
 def matrix_to_pose(mat: np.ndarray) -> tuple[float, float, float, float, float, float]:
     tx, ty, tz = float(mat[0, 3]), float(mat[1, 3]), float(mat[2, 3])
     rot = mat[:3, :3].astype(np.float64)
@@ -294,8 +316,8 @@ class GenesisHeadTrackerApp(ctk.CTk):
         super().__init__()
         self.cfg = cfg
         self.title("Genesis Head Tracker")
-        self.geometry("760x440")
-        self.minsize(720, 420)
+        self.geometry("760x500")
+        self.minsize(720, 480)
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
@@ -372,31 +394,49 @@ class GenesisHeadTrackerApp(ctk.CTk):
 
         flt = self.cfg.get("filter", {})
         axes = self.cfg.get("axes", {})
+        lean_cfg = self.cfg.setdefault("window_lean", dict(DEFAULT_CONFIG["window_lean"]))
         smooth_init = max(0.05, min(1.0, 1.0 - float(flt.get("output_lerp", 0.18)) * 2.0))
-        sens_init = float(axes.get("yaw", {}).get("scale", 1.8))
+        sens_init = float(axes.get("yaw", {}).get("scale", 1.9))
         dz_init = float(axes.get("yaw", {}).get("deadzone", 1.4))
+        max_yaw_init = max(90.0, min(175.0, float(axes.get("yaw", {}).get("max", 155.0))))
+        lean_enabled = bool(lean_cfg.get("enabled", True))
 
         self.smooth_lbl = ctk.CTkLabel(right, text=f"Smoothness: {smooth_init:.2f}")
-        self.smooth_lbl.grid(row=3, column=0, padx=14, pady=(12, 0), sticky="w")
+        self.smooth_lbl.grid(row=3, column=0, padx=14, pady=(10, 0), sticky="w")
         self.smooth_slider = ctk.CTkSlider(right, from_=0.1, to=0.95, command=self._on_smooth_change)
         self.smooth_slider.set(smooth_init)
-        self.smooth_slider.grid(row=4, column=0, padx=14, pady=(2, 6), sticky="ew")
+        self.smooth_slider.grid(row=4, column=0, padx=14, pady=(2, 4), sticky="ew")
 
         self.sens_lbl = ctk.CTkLabel(right, text=f"Sensitivity: {sens_init:.2f}x")
-        self.sens_lbl.grid(row=5, column=0, padx=14, pady=(6, 0), sticky="w")
+        self.sens_lbl.grid(row=5, column=0, padx=14, pady=(4, 0), sticky="w")
         self.sens_slider = ctk.CTkSlider(right, from_=0.6, to=3.0, command=self._on_sens_change)
         self.sens_slider.set(sens_init)
-        self.sens_slider.grid(row=6, column=0, padx=14, pady=(2, 6), sticky="ew")
+        self.sens_slider.grid(row=6, column=0, padx=14, pady=(2, 4), sticky="ew")
 
         self.dz_lbl = ctk.CTkLabel(right, text=f"Center Deadzone: {dz_init:.1f}°")
-        self.dz_lbl.grid(row=7, column=0, padx=14, pady=(6, 0), sticky="w")
+        self.dz_lbl.grid(row=7, column=0, padx=14, pady=(4, 0), sticky="w")
         self.dz_slider = ctk.CTkSlider(right, from_=0.0, to=3.5, command=self._on_dz_change)
         self.dz_slider.set(dz_init)
-        self.dz_slider.grid(row=8, column=0, padx=14, pady=(2, 10), sticky="ew")
+        self.dz_slider.grid(row=8, column=0, padx=14, pady=(2, 4), sticky="ew")
+
+        self.max_yaw_lbl = ctk.CTkLabel(right, text=f"Max Look Angle: {max_yaw_init:.0f}°")
+        self.max_yaw_lbl.grid(row=9, column=0, padx=14, pady=(4, 0), sticky="w")
+        self.max_yaw_slider = ctk.CTkSlider(right, from_=90.0, to=175.0, command=self._on_max_yaw_change)
+        self.max_yaw_slider.set(max_yaw_init)
+        self.max_yaw_slider.grid(row=10, column=0, padx=14, pady=(2, 6), sticky="ew")
+
+        self.lean_var = ctk.BooleanVar(value=lean_enabled)
+        self.lean_chk = ctk.CTkCheckBox(
+            right,
+            text="Truck Window Lean-Out",
+            variable=self.lean_var,
+            command=self._on_lean_toggle,
+        )
+        self.lean_chk.grid(row=11, column=0, padx=14, pady=(4, 6), sticky="w")
 
         udp_ip = self.cfg.get("udp_ip", "127.0.0.1")
         udp_port = self.cfg.get("udp_port", 4248)
-        ctk.CTkLabel(right, text=f"UDP -> {udp_ip}:{udp_port} (200 Hz)", font=ctk.CTkFont(size=12), text_color="#9ca3af").grid(row=9, column=0, padx=14, pady=(6, 12), sticky="w")
+        ctk.CTkLabel(right, text=f"UDP -> {udp_ip}:{udp_port} (200 Hz)", font=ctk.CTkFont(size=12), text_color="#9ca3af").grid(row=12, column=0, padx=14, pady=(4, 10), sticky="w")
 
     def _init_tracker(self) -> None:
         ensure_model()
@@ -406,9 +446,9 @@ class GenesisHeadTrackerApp(ctk.CTk):
             running_mode=mp_vision.RunningMode.VIDEO,
             num_faces=1,
             output_facial_transformation_matrixes=True,
-            min_face_detection_confidence=0.5,
-            min_face_presence_confidence=0.5,
-            min_tracking_confidence=0.5,
+            min_face_detection_confidence=0.45,
+            min_face_presence_confidence=0.4,
+            min_tracking_confidence=0.35,
         )
         self.landmarker = mp_vision.FaceLandmarker.create_from_options(options)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -480,6 +520,17 @@ class GenesisHeadTrackerApp(ctk.CTk):
             axes = self.cfg.setdefault("axes", {})
             axes.setdefault("yaw", {})["deadzone"] = round(val, 2)
             axes.setdefault("pitch", {})["deadzone"] = round(val * 0.85, 2)
+
+    def _on_max_yaw_change(self, val: float) -> None:
+        self.max_yaw_lbl.configure(text=f"Max Look Angle: {val:.0f}°")
+        with self.lock:
+            axes = self.cfg.setdefault("axes", {})
+            axes.setdefault("yaw", {})["max"] = round(val, 1)
+
+    def _on_lean_toggle(self) -> None:
+        enabled = bool(self.lean_var.get())
+        with self.lock:
+            self.cfg.setdefault("window_lean", dict(DEFAULT_CONFIG["window_lean"]))["enabled"] = enabled
 
     def _start_threads(self) -> None:
         threading.Thread(target=self._camera_loop, daemon=True).start()
@@ -567,9 +618,11 @@ class GenesisHeadTrackerApp(ctk.CTk):
                             self.recenter_requested = False
                         zero = self.zero
                         axes_cfg = self.cfg.get("axes", {})
+                        lean_cfg = self.cfg.get("window_lean", DEFAULT_CONFIG["window_lean"])
                     centered = [raw[i] - zero[i] for i in range(6)]
                     filtered = [self.filters[self.axis_names[i]].apply(centered[i], now) for i in range(6)]
                     out = [shape_axis(filtered[i], axes_cfg.get(self.axis_names[i], {})) for i in range(6)]
+                    out = apply_window_lean(out, lean_cfg, axes_cfg.get("x", {}))
                     with self.lock:
                         self.target_out = out
                     status, color = "TRACKING", "#22c55e"
@@ -595,6 +648,8 @@ class GenesisHeadTrackerApp(ctk.CTk):
                 new_cfg = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
                 with self.lock:
                     self.cfg["axes"] = new_cfg.get("axes", self.cfg.get("axes", {}))
+                    if "window_lean" in new_cfg:
+                        self.cfg["window_lean"] = new_cfg["window_lean"]
                     flt = new_cfg.get("filter", {})
                     self.cfg["filter"] = flt
                     self.output_lerp = max(0.03, min(1.0, float(flt.get("output_lerp", self.output_lerp))))

@@ -16,7 +16,8 @@ Designed for **any sim or game** supporting OpenTrack UDP or TrackIR/FreeTrack (
 ## Features
 - **Cross-platform:** Works natively on **Windows** (Media Foundation / DirectShow + optional USB Android camera via `scrcpy`) and **Linux** (V4L2 webcams).
 - **200 Hz Smooth Output:** Decoupled 200 Hz UDP interpolation thread + adaptive **One-Euro filter** for zero-jitter gauges and instant mirror checks.
-- **Simple Dark UI:** Camera selector, live preview, 90° rotation, **Smoothness / Sensitivity / Center Deadzone** sliders, and live `config.json` hot-reload.
+- **Truck Window Look-Out:** Expanded **Max Look Angle** slider (`90°–175°`, default `155°`) and optional **Truck Window Lean-Out** that smoothly blends lateral `X` shift once you look past `65°` yaw—making side-window checks and trailer backing effortless while keeping normal mirror checks centered.
+- **Simple Dark UI:** Camera selector, live preview, 90° rotation, **Smoothness / Sensitivity / Center Deadzone / Max Look Angle** sliders, **Truck Window Lean-Out** toggle, and live `config.json` hot-reload.
 - **Global Hotkeys:** `F7` to recenter, `Scroll Lock` to pause/resume while in-game.
 
 ## Quick Start

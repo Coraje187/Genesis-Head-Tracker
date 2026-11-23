@@ -1,6 +1,6 @@
 [Setup]
 AppName=Genesis Head Tracker
-AppVersion=1.0.0
+AppVersion=1.0.2
 AppPublisher=Coraje187
 AppPublisherURL=https://github.com/Coraje187/Genesis-Head-Tracker
 DefaultDirName={autopf}\Genesis Head Tracker

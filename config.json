@@ -6,6 +6,13 @@
   "udp_hz": 200,
   "recenter_key": "f7",
   "pause_key": "scroll_lock",
+  "window_lean": {
+    "enabled": true,
+    "start_yaw": 65.0,
+    "full_yaw": 125.0,
+    "max_x": 18.0,
+    "invert": false
+  },
   "filter": {
     "min_cutoff": 0.75,
     "beta": 0.025,
@@ -14,10 +21,10 @@
   },
   "axes": {
     "yaw": {
-      "scale": 1.8,
+      "scale": 1.9,
       "deadzone": 1.4,
-      "curve": 1.3,
-      "max": 95.0,
+      "curve": 1.32,
+      "max": 155.0,
       "invert": false
     },
     "pitch": {
@@ -35,10 +42,10 @@
       "invert": false
     },
     "x": {
-      "scale": 0.7,
+      "scale": 1.2,
       "deadzone": 0.8,
       "curve": 1.15,
-      "max": 20.0,
+      "max": 35.0,
       "invert": false
     },
     "y": {
